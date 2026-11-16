@@ -2,6 +2,7 @@ name: CI
 
 on:
   push:
+    branches: [main]
   pull_request:
 
 permissions:
@@ -21,11 +22,20 @@ jobs:
       - name: Install dependencies
         run: uv sync --locked
 
-      - name: Lint
-        run: uv run ruff check .
+      - name: Cache pre-commit environments
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
 
-      - name: Format check
-        run: uv run ruff format --check .
+      # Same hooks as local commits. no-commit-to-branch only guards local commits.
+      - name: Pre-commit hooks (lint, format, hygiene, secrets, lockfile)
+        run: uv run pre-commit run --all-files --show-diff-on-failure
+        env:
+          SKIP: no-commit-to-branch
 
-      - name: Test
-        run: uv run pytest
+      - name: Type check
+        run: uv run mypy
+
+      - name: Test with coverage
+        run: uv run pytest --cov --cov-report=term-missing

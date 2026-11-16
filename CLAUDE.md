@@ -9,11 +9,30 @@ a human decides. Anything unclear is flagged, not guessed.
 
 ```bash
 uv sync                                         # install deps
+uv run pre-commit install                       # once per clone: commit, commit-msg, pre-push hooks
 uv run pytest                                   # tests
+uv run pytest --cov --cov-report=term-missing   # tests with coverage
+uv run mypy                                     # type check (strict)
 uv run ruff check .                             # lint
 uv run ruff format .                            # format
+uv run pre-commit run --all-files               # all commit-stage hooks, like CI
 uv run uvicorn ai_act_check.api:app --reload    # dev server on :8000
 ```
+
+## Guardrails
+
+| Stage | Checks |
+|---|---|
+| pre-commit (staged files) | ruff check --fix, ruff format, whitespace/EOF, YAML/TOML, merge markers, large files (>1 MB, `data/raw/` excluded), private keys, gitleaks, `uv lock --check`, no commits on `main` |
+| commit-msg | Conventional Commits (`feat:`, `fix:`, `chore:`, `ci:`, `docs:`, `test:`, `refactor:` …) |
+| pre-push | mypy strict, pytest |
+| CI (`ci.yml`, every PR and push to `main`) | all pre-commit hooks on all files, mypy, pytest with coverage |
+| Security (`security.yml`) | pip-audit on locked deps: weekly, and when `uv.lock` changes |
+| Dependabot | weekly grouped update PRs for uv deps and GitHub Actions |
+| Claude Code hook | after each edit Claude makes: ruff format + ruff check --fix on that `.py` file |
+
+Workflow: branch off `main` → small commits → push → PR → CI green → merge. `main` is protected.
+Do not bypass hooks with `--no-verify`.
 
 ## Folder map
 
@@ -25,7 +44,8 @@ uv run uvicorn ai_act_check.api:app --reload    # dev server on :8000
 | `data/` | Corpus: EUR-Lex law text and Commission guidelines. `data/raw/*.html` is committed |
 | `evals/` | Golden set and eval metrics |
 | `reports/` | Eval run outputs and baselines |
-| `.github/workflows/` | CI: lint and tests |
+| `.github/workflows/` | CI (`ci.yml`) and dependency audit (`security.yml`) |
+| `.claude/` | Claude Code settings, deny rules and hooks |
 
 ## Architecture rule
 
