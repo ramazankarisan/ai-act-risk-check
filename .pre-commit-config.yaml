@@ -1,0 +1,72 @@
+# Git hooks. Install once per clone:  uv run pre-commit install
+# CI runs the same file:              uv run pre-commit run --all-files
+default_install_hook_types: [pre-commit, commit-msg, pre-push]
+default_stages: [pre-commit]
+
+repos:
+  # --- Repo hygiene -------------------------------------------------------
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: [--maxkb=1024]
+        exclude: ^data/raw/ # EUR-Lex source HTML is several MB and is committed on purpose
+      - id: detect-private-key
+      - id: no-commit-to-branch
+        args: [--branch, main]
+
+  # --- Secrets ------------------------------------------------------------
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.1
+    hooks:
+      - id: gitleaks
+
+  # --- Commit message: Conventional Commits -------------------------------
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v4.5.0
+    hooks:
+      - id: conventional-pre-commit
+        stages: [commit-msg]
+
+  # --- Project tools (versions come from uv.lock) -------------------------
+  - repo: local
+    hooks:
+      - id: uv-lock-check
+        name: uv lock is up to date
+        entry: uv lock --check
+        language: unsupported
+        files: ^(pyproject\.toml|uv\.lock)$
+        pass_filenames: false
+
+      - id: ruff-check
+        name: ruff check
+        entry: uv run ruff check --fix
+        language: unsupported
+        types: [python]
+
+      - id: ruff-format
+        name: ruff format
+        entry: uv run ruff format
+        language: unsupported
+        types: [python]
+
+      - id: mypy
+        name: mypy (strict)
+        entry: uv run mypy
+        language: unsupported
+        pass_filenames: false
+        always_run: true
+        stages: [pre-push]
+
+      - id: pytest
+        name: pytest
+        entry: uv run pytest -q
+        language: unsupported
+        pass_filenames: false
+        always_run: true
+        stages: [pre-push]
