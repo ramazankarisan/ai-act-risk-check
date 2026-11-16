@@ -34,6 +34,23 @@ uv run uvicorn ai_act_check.api:app --reload    # dev server on :8000
 Workflow: branch off `main` → small commits → push → PR → CI green → merge. `main` is protected.
 Do not bypass hooks with `--no-verify`.
 
+## Subagents
+
+| Agent | Model | Can | Use |
+|---|---|---|---|
+| `locator` | haiku | read only | where is X / what calls Y / find a corpus article |
+| `test-runner` | haiku | run checks only (hook-enforced, no `--fix`) | run ruff, mypy and pytest; report failures only |
+| `test-writer` | sonnet | write in `tests/` only (hook-enforced) | add tests, including xfail tests for hand-written stubs |
+| `convention-reviewer` | sonnet | read-only git (hook-enforced) | review the branch diff against the rules above |
+
+Agent tool limits are enforced by PreToolUse hooks in `.claude/hooks/` (requires `jq`). They guard
+against mistakes; they are not a security sandbox.
+
+Delegation rules:
+- Before opening a PR, run `convention-reviewer` on the branch and resolve BLOCKER and MAJOR findings.
+- Before committing, run `test-runner` (or the equivalent commands) and report failures.
+- Use `test-writer` for new tests. Use `locator` for multi-file lookups.
+
 ## Folder map
 
 | Path | Purpose |
@@ -46,6 +63,7 @@ Do not bypass hooks with `--no-verify`.
 | `reports/` | Eval run outputs and baselines |
 | `.github/workflows/` | CI (`ci.yml`) and dependency audit (`security.yml`) |
 | `.claude/` | Claude Code settings, deny rules and hooks |
+| `.claude/agents/` | Project subagents (see below) |
 
 ## Architecture rule
 
