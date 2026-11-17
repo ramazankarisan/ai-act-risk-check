@@ -20,6 +20,9 @@ dist/
 .coverage
 htmlcov/
 
+# Generated corpus: rebuild with `uv run python -m ai_act_check.corpus`
+data/corpus/
+
 # OS / editor
 .DS_Store
 .idea/
