@@ -2,6 +2,7 @@
 
 import json
 import re
+from collections import Counter
 from pathlib import Path
 
 import pytest
@@ -11,7 +12,9 @@ from ai_act_check.corpus import (
     SOURCE_URL,
     Chunk,
     clean_text,
+    element_text,
     label_key,
+    load_document,
     parse_regulation,
     write_jsonl,
 )
@@ -210,6 +213,48 @@ def test_annex_iii_labels_are_not_synthetic(chunks: list[Chunk]) -> None:
 
     assert annex_iii
     assert not any(c.synthetic_label for c in annex_iii)
+
+
+# --- No text lost -------------------------------------------------------------------------
+
+
+def _words(text: str) -> Counter[str]:
+    """Count lower-case words, ignoring punctuation and spacing differences."""
+    return Counter(re.findall(r"\w+", text.lower()))
+
+
+def _unit_key(chunk: Chunk) -> str:
+    """Return the OJ element id of the recital, article or annex a chunk belongs to."""
+    if chunk.kind == "recital":
+        return f"rct_{chunk.recital}"
+    if chunk.kind == "article":
+        return f"art_{chunk.article}"
+    return f"anx_{chunk.annex}"
+
+
+def test_every_source_word_appears_in_its_units_chunks(chunks: list[Chunk]) -> None:
+    # Lead-ins are repeated across point chunks, so chunks may have extra words, never fewer.
+    soup = load_document(RAW_HTML_PATH.read_bytes())
+    chunk_words: dict[str, Counter[str]] = {}
+    for chunk in chunks:
+        chunk_words.setdefault(_unit_key(chunk), Counter()).update(_words(chunk.text))
+    text_classes = ["oj-normal", "oj-enumeration-spacing", "oj-ti-grseq-1"]
+
+    lost: dict[str, Counter[str]] = {}
+    for unit in soup.find_all("div", id=re.compile(r"^(rct_\d+|art_\d+|anx_[IVXL]+)$")):
+        unit_id = str(unit["id"])
+        source = Counter[str]()
+        for block in unit.find_all(["p", "div"], class_=text_classes):
+            inside_enumeration = block.find_parent(class_="oj-enumeration-spacing") is not None
+            if not inside_enumeration:
+                source.update(_words(element_text(block)))
+        if unit_id.startswith("rct_"):
+            source[unit_id.removeprefix("rct_")] -= 1  # printed "(27)" label is dropped on purpose
+        missing = source - chunk_words.get(unit_id, Counter())
+        if missing:
+            lost[unit_id] = missing
+
+    assert lost == {}
 
 
 # --- Pure helpers -------------------------------------------------------------------------
