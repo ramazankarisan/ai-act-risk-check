@@ -8,8 +8,11 @@ repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
+      # Raw downloads must stay byte-identical to the source.
       - id: trailing-whitespace
+        exclude: ^data/raw/
       - id: end-of-file-fixer
+        exclude: ^data/raw/
       - id: check-yaml
       - id: check-toml
       - id: check-merge-conflict
