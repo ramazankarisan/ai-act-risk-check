@@ -39,7 +39,7 @@ The rules node and eval metrics are hand-written and may still be stubs that rai
 ```python
 @pytest.mark.xfail(raises=NotImplementedError, strict=True, reason="stub: not implemented yet")
 def test_social_scoring_is_prohibited() -> None:
-    ...
+    """Art. 5(1)(c): social scoring leading to detrimental treatment is prohibited."""
 ```
 
 This keeps CI green while the stub is unimplemented. Once the function is implemented, the

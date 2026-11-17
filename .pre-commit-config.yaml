@@ -53,7 +53,7 @@ repos:
         name: ruff format
         entry: uv run ruff format
         language: unsupported
-        types: [python]
+        types_or: [python, markdown] # ruff also formats Python code blocks in Markdown
 
       - id: mypy
         name: mypy (strict)
