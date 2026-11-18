@@ -519,10 +519,10 @@ def test_predictions_in_different_order_match_by_id(metric: MetricFn) -> None:
 
     result = metric(list(reversed(in_order)), golds)
 
-    # Lower-is-better metrics (silent_miss_rate) score 0.0 here, so compare with the
-    # in-order result instead of a fixed 1.0.
-    assert result == pytest.approx(metric(in_order, golds))
-    assert result in (pytest.approx(0.0), pytest.approx(1.0))
+    # Every prediction is right, so each metric has its best score: 1.0, except
+    # silent_miss_rate, where lower is better and the best score is 0.0.
+    best = 0.0 if metric is silent_miss_rate else 1.0
+    assert result == pytest.approx(best)
 
 
 @pytest.mark.parametrize("metric", METRICS)
