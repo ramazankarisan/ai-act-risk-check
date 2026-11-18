@@ -81,9 +81,10 @@ Delegation rules:
 - **Public data only**: EUR-Lex law text, Commission guidelines, self-written synthetic cases.
   No personal or client data.
 - **Code style**: simple, fully typed code with small functions and docstrings on public functions.
-- **Human-authored parts**: the metric implementations (bodies of `evals/metrics.py`) and the
-  deterministic rules node are written by hand. Do not generate them. Leave stubs that raise
-  `NotImplementedError`, marked with `# TODO(ramazan)`.
+- **Human-authored parts**: the deterministic rules node is written by hand. Do not generate it.
+  Leave stubs that raise `NotImplementedError`, marked with `# TODO(ramazan)`.
+- **Eval metrics**: Claude may implement the bodies of `evals/metrics.py`; the maintainer reviews
+  every change. The docstrings are the spec: do not change them without asking.
 - **Golden set**: Claude may draft golden cases, always with `review_status: draft` and a `source`
   (chunk ids or a named Commission guideline). Only the maintainer sets `accepted` or `changed`.
   Never change the label, source or status of a case that is not `draft`.
