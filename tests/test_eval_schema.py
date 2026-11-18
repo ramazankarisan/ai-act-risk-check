@@ -8,7 +8,7 @@ from pydantic import ValidationError
 
 from evals.schema import GoldenCase, Prediction, ReviewStatus, RiskClass, load_golden
 
-CHUNK_IDS = {"art-5-1-c", "anx-III-4-a"}
+CHUNK_IDS = {"art-5-1-c", "anx-III-4-a", "art-4"}
 
 VALID_YAML = """\
 cases:
@@ -35,16 +35,19 @@ def _case_yaml(
     case_id: str = "case-1",
     expected_class: str = "minimal",
     articles: str = "[]",
+    acceptable: str | None = None,
     extra: str = "",
     source: str = "Commission guidelines",
     review_status: str = "draft",
 ) -> str:
+    acceptable_line = "" if acceptable is None else f"    acceptable_articles: {acceptable}\n"
     return (
         "cases:\n"
         f"  - id: {case_id}\n"
         "    description: d\n"
         f"    expected_class: {expected_class}\n"
         f"    expected_articles: {articles}\n"
+        f"{acceptable_line}"
         "    should_flag: false\n"
         f"    source: {source}\n"
         f"    review_status: {review_status}\n"
@@ -206,6 +209,58 @@ def test_committed_v0_unclear_cases_are_flagged() -> None:
 
     assert unclear
     assert all(case.should_flag for case in unclear)
+
+
+def test_load_golden_omitted_acceptable_articles_defaults_to_empty_list(tmp_path: Path) -> None:
+    path = _write(tmp_path, _case_yaml())
+
+    cases = load_golden(path, chunk_ids=CHUNK_IDS)
+
+    assert cases[0].acceptable_articles == []
+
+
+def test_load_golden_parses_acceptable_articles(tmp_path: Path) -> None:
+    path = _write(tmp_path, _case_yaml(articles="[art-5-1-c]", acceptable="[art-4]"))
+
+    cases = load_golden(path, chunk_ids=CHUNK_IDS)
+
+    assert cases[0].acceptable_articles == ["art-4"]
+
+
+def test_load_golden_id_both_expected_and_acceptable_raises(tmp_path: Path) -> None:
+    path = _write(
+        tmp_path,
+        _case_yaml(case_id="case-overlap", articles="[art-4]", acceptable="[art-4]"),
+    )
+
+    with pytest.raises(ValueError) as excinfo:
+        load_golden(path, chunk_ids=CHUNK_IDS)
+
+    assert "case-overlap" in str(excinfo.value)
+    assert "art-4" in str(excinfo.value)
+
+
+def test_load_golden_unknown_acceptable_chunk_id_raises(tmp_path: Path) -> None:
+    path = _write(tmp_path, _case_yaml(case_id="case-acc", acceptable="[art-nope]"))
+
+    with pytest.raises(ValueError) as excinfo:
+        load_golden(path, chunk_ids=CHUNK_IDS)
+
+    assert "case-acc" in str(excinfo.value)
+    assert "art-nope" in str(excinfo.value)
+
+
+def test_committed_v0_acceptable_articles() -> None:
+    cases = load_golden()
+
+    acceptable = {case.id: case.acceptable_articles for case in cases if case.acceptable_articles}
+
+    assert acceptable == {
+        "prohibited-003": ["art-3-pt-39"],
+        "unclear-002": ["art-50-3"],
+        "minimal-001": ["art-4"],
+        "minimal-002": ["art-4"],
+    }
 
 
 def test_prediction_cited_articles_defaults_to_empty_list() -> None:

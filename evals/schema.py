@@ -44,14 +44,24 @@ class ReviewStatus(StrEnum):
 
 
 class GoldenCase(BaseModel):
-    """One eval case with its expected outcome and the source that justifies it."""
+    """One eval case with its expected outcome and the source that justifies it.
+
+    Citations: `expected_articles` must be cited (citation recall counts them).
+    `acceptable_articles` may be cited without penalty (citation precision allows
+    expected plus acceptable). The two lists must not overlap.
+
+    Flags: `should_flag` means the case is uncertain and needs a human decision. It does not
+    mean severe: a clearly prohibited practice has `should_flag: False`.
+    """
 
     model_config = ConfigDict(extra="forbid")  # a misspelled field name is an error
 
     id: str
     description: str
     expected_class: RiskClass
-    expected_articles: list[str]  # corpus chunk ids, e.g. "anx-III-4-a"
+    expected_articles: list[str]  # corpus chunk ids that must be cited, e.g. "anx-III-4-a"
+    # corpus chunk ids that may also be cited (correct, but not required)
+    acceptable_articles: list[str] = Field(default_factory=list)
     should_flag: bool  # True if a human should review this case
     source: str  # chunk ids or a named Commission guideline that justify the label
     review_status: ReviewStatus
@@ -79,13 +89,15 @@ def load_golden(path: Path = GOLDEN_V0_PATH, chunk_ids: Set[str] | None = None) 
     """Load and validate a golden-set YAML file.
 
     The file has a top-level `cases:` list. Raises `ValueError` if the file has no case list,
-    if two cases share an id, if a case has an empty source, or if a case names a chunk id
-    (in `expected_articles` or in `source`) that is not in the corpus.
+    if two cases share an id, if a case has an empty source, if a chunk id is both expected
+    and acceptable, or if a case names a chunk id (in `expected_articles`,
+    `acceptable_articles` or `source`) that is not in the corpus.
     Pass `chunk_ids` to check against a known set instead of parsing the corpus.
     """
     cases = read_cases(path)
     check_unique_ids(cases)
     check_sources(cases)
+    check_no_overlap(cases)
     check_chunk_ids(cases, corpus_chunk_ids() if chunk_ids is None else chunk_ids)
     return cases
 
@@ -113,11 +125,26 @@ def check_sources(cases: list[GoldenCase]) -> None:
         raise ValueError(f"cases without a source: {no_source}")
 
 
+def check_no_overlap(cases: list[GoldenCase]) -> None:
+    """Raise `ValueError` if a chunk id is listed as both expected and acceptable."""
+    overlap: dict[str, list[str]] = {}
+    for case in cases:
+        both = sorted(set(case.expected_articles) & set(case.acceptable_articles))
+        if both:
+            overlap[case.id] = both
+    if overlap:
+        raise ValueError(f"chunk ids both expected and acceptable per case: {overlap}")
+
+
 def check_chunk_ids(cases: list[GoldenCase], known: Set[str]) -> None:
     """Raise `ValueError` if a case names a chunk id that is not in `known`."""
     unknown: dict[str, list[str]] = {}
     for case in cases:
-        named = set(case.expected_articles) | set(_CHUNK_ID_IN_TEXT.findall(case.source))
+        named = (
+            set(case.expected_articles)
+            | set(case.acceptable_articles)
+            | set(_CHUNK_ID_IN_TEXT.findall(case.source))
+        )
         missing = sorted(named - known)
         if missing:
             unknown[case.id] = missing

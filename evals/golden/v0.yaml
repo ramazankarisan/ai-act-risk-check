@@ -4,8 +4,11 @@
 #   id                 unique case id
 #   description        the AI use case as a user would describe it (fictional company)
 #   expected_class     prohibited | high_risk | transparency | minimal | unclear
-#   expected_articles  corpus chunk ids the answer should cite (checked against the corpus)
-#   should_flag        true if a human should review this case
+#   expected_articles  corpus chunk ids the answer must cite (citation recall counts these)
+#   acceptable_articles  optional: chunk ids the answer may also cite without penalty
+#                      (citation precision allows expected + acceptable); no overlap
+#   should_flag        true if the case is uncertain and a human must decide; a flag means
+#                      uncertain, not severe, so clearly prohibited cases are not flagged
 #   source             chunk ids or a named Commission guideline that justify the label; may
 #                      list more chunks than expected_articles (definitions, recitals,
 #                      conditional duties) as supporting context
@@ -53,6 +56,7 @@ cases:
       "emotion score" per agent and use it in quarterly performance reviews.
     expected_class: prohibited
     expected_articles: [art-5-1-f]
+    acceptable_articles: [art-3-pt-39]
     should_flag: false
     source: art-5-1-f; art-3-pt-39
     review_status: accepted
@@ -145,6 +149,7 @@ cases:
       forecast to plan baking.
     expected_class: minimal
     expected_articles: [art-95-1]
+    acceptable_articles: [art-4]
     should_flag: false
     source: >-
       Not an Art. 5 practice, not in Annex III, no Art. 50 duty; no decision about people.
@@ -152,7 +157,8 @@ cases:
     review_status: changed
     notes: >-
       No prohibited practice, no Annex III area and no transparency duty. The answer should
-      cite art-95-1: only voluntary codes of conduct apply.
+      cite art-95-1: only voluntary codes of conduct apply. Citing art-4 (AI literacy, which
+      applies to providers and deployers of every AI system) is also correct.
 
   - id: minimal-002
     description: >-
@@ -161,6 +167,7 @@ cases:
       customer emails.
     expected_class: minimal
     expected_articles: [art-95-1]
+    acceptable_articles: [art-4]
     should_flag: false
     source: >-
       Not an Art. 5 practice, not in Annex III, no Art. 50 duty. Only voluntary codes of conduct
@@ -169,6 +176,8 @@ cases:
     notes: >-
       A spam filter makes no decision about people in a listed area and does not interact
       with them. The answer should cite art-95-1: only voluntary codes of conduct apply.
+      Citing art-4 (AI literacy, which applies to providers and deployers of every AI system)
+      is also correct.
 
   # --- unclear ----------------------------------------------------------------------------
 
@@ -197,6 +206,7 @@ cases:
       so a dispatcher can call them. The company says the whole system is for road safety.
     expected_class: unclear
     expected_articles: [art-5-1-f, rec-18, anx-III-1-c]
+    acceptable_articles: [art-50-3]
     should_flag: true
     source: art-5-1-f; rec-18; anx-III-1-c; art-50-3
     review_status: accepted

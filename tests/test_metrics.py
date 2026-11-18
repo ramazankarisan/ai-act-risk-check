@@ -15,6 +15,7 @@ def gold(
     cls: RiskClass = RiskClass.HIGH_RISK,
     articles: Sequence[str] = (),
     flag: bool = False,
+    acceptable: Sequence[str] = (),
 ) -> GoldenCase:
     """Build a golden case with dummy text."""
     return GoldenCase(
@@ -22,6 +23,7 @@ def gold(
         description="dummy description",
         expected_class=cls,
         expected_articles=list(articles),
+        acceptable_articles=list(acceptable),
         should_flag=flag,
         source="dummy source",
         review_status=ReviewStatus.DRAFT,
@@ -175,6 +177,33 @@ def test_citation_precision_is_mean_over_cases() -> None:
     assert result == pytest.approx(0.5)
 
 
+def test_citation_precision_docstring_example_with_acceptable() -> None:
+    golds = [gold("a", articles=["A", "B"], acceptable=["C"])]
+    preds = [pred("a", cited=["A", "C", "D"])]
+
+    result = citation_precision(preds, golds)
+
+    assert result == pytest.approx(2 / 3)
+
+
+def test_citation_precision_only_acceptable_cited_is_one() -> None:
+    golds = [gold("a", articles=["A"], acceptable=["B", "C"])]
+    preds = [pred("a", cited=["B", "C"])]
+
+    result = citation_precision(preds, golds)
+
+    assert result == pytest.approx(1.0)
+
+
+def test_citation_precision_nothing_cited_nothing_expected_with_acceptable_is_one() -> None:
+    golds = [gold("a", articles=[], acceptable=["B"])]
+    preds = [pred("a", cited=[])]
+
+    result = citation_precision(preds, golds)
+
+    assert result == pytest.approx(1.0)
+
+
 def test_citation_precision_empty_lists_raise() -> None:
     with pytest.raises(ValueError):
         citation_precision([], [])
@@ -235,6 +264,16 @@ def test_citation_recall_is_mean_over_cases() -> None:
     result = citation_recall(preds, golds)
 
     assert result == pytest.approx(0.5)
+
+
+def test_citation_recall_ignores_acceptable_articles() -> None:
+    golds = [gold("a", articles=["A"], acceptable=["B"])]
+
+    only_acceptable = citation_recall([pred("a", cited=["B"])], golds)
+    expected_cited = citation_recall([pred("a", cited=["A"])], golds)
+
+    assert only_acceptable == pytest.approx(0.0)
+    assert expected_cited == pytest.approx(1.0)
 
 
 def test_citation_recall_empty_lists_raise() -> None:
