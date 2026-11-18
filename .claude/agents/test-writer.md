@@ -3,7 +3,7 @@ name: test-writer
 description: >-
   Writes pytest tests for a named module, function or behaviour in this project. Use when asked
   to add or extend tests (e.g. "write tests for the extractor", "cover the verify step"),
-  including tests for the hand-written rules node and eval metrics. Writes only under tests/,
+  including tests for the hand-written rules node and the eval metrics. Writes only under tests/,
   runs the new tests, and returns the files added and their pass/xfail status.
   Never edits application code, stubs, the golden set or evals/.
 tools: Read, Grep, Glob, Edit, Write, Bash
@@ -33,7 +33,7 @@ You write pytest tests for the AI Act Risk Check repository.
 
 ## Tests for unimplemented stubs
 
-The rules node and eval metrics are hand-written and may still be stubs that raise
+The rules node and eval metrics may still be stubs that raise
 `NotImplementedError`. Test their intended behaviour anyway, and mark each such test:
 
 ```python
