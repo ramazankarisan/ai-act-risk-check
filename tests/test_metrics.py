@@ -4,7 +4,13 @@ from collections.abc import Callable, Sequence
 
 import pytest
 
-from evals.metrics import citation_precision, citation_recall, class_accuracy, flag_recall
+from evals.metrics import (
+    citation_precision,
+    citation_recall,
+    class_accuracy,
+    flag_recall,
+    review_rate,
+)
 from evals.schema import GoldenCase, Prediction, ReviewStatus, RiskClass
 
 MetricFn = Callable[[Sequence[Prediction], Sequence[GoldenCase]], float]
@@ -319,9 +325,62 @@ def test_flag_recall_all_flagged_is_one() -> None:
     assert result == pytest.approx(1.0)
 
 
+# --- review_rate ------------------------------------------------------------------------
+
+
+def test_review_rate_docstring_example_three_of_ten() -> None:
+    golds = [gold(str(i)) for i in range(10)]
+    preds = [pred(str(i), flagged=i < 3) for i in range(10)]
+
+    result = review_rate(preds, golds)
+
+    assert result == pytest.approx(0.3)
+
+
+def test_review_rate_nothing_flagged_is_zero() -> None:
+    golds = [gold("a"), gold("b")]
+    preds = [pred("a", flagged=False), pred("b", flagged=False)]
+
+    result = review_rate(preds, golds)
+
+    assert result == pytest.approx(0.0)
+
+
+def test_review_rate_flagging_everything_is_visible() -> None:
+    golds = [gold("a", flag=True), gold("b", flag=False), gold("c", flag=False)]
+    preds = [pred(case_id, flagged=True) for case_id in ("a", "b", "c")]
+
+    recall = flag_recall(preds, golds)
+    rate = review_rate(preds, golds)
+
+    assert recall == pytest.approx(1.0)
+    assert rate == pytest.approx(1.0)
+
+
+def test_review_rate_ignores_should_flag() -> None:
+    preds = [pred("a", flagged=True), pred("b", flagged=False)]
+
+    with_flags = review_rate(preds, [gold("a", flag=True), gold("b", flag=True)])
+    without_flags = review_rate(preds, [gold("a", flag=False), gold("b", flag=False)])
+
+    assert with_flags == pytest.approx(0.5)
+    assert without_flags == pytest.approx(0.5)
+
+
+def test_review_rate_empty_lists_raise() -> None:
+    with pytest.raises(ValueError):
+        review_rate([], [])
+
+
 # --- shared pairing rules ---------------------------------------------------------------
 
-METRICS: list[MetricFn] = [class_accuracy, citation_precision, citation_recall, flag_recall]
+METRICS: list[MetricFn] = [
+    class_accuracy,
+    citation_precision,
+    citation_recall,
+    flag_recall,
+    review_rate,
+]
 
 
 def _golds() -> list[GoldenCase]:

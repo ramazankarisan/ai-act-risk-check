@@ -136,3 +136,24 @@ def flag_recall(preds: Sequence[Prediction], golds: Sequence[GoldenCase]) -> flo
         if pred.flagged:
             flagged += 1
     return flagged / len(should_flag)
+
+
+def review_rate(preds: Sequence[Prediction], golds: Sequence[GoldenCase]) -> float:
+    """Share of all cases the system flagged for human review: "how much work for humans".
+
+    Report it together with `flag_recall`: they pull in opposite directions. Flagging every
+    case gives `flag_recall` 1.0 but also `review_rate` 1.0, which makes the tool useless.
+    The ideal value is the share of cases with `should_flag=True`.
+    Raises `ValueError` for an empty case list.
+
+    Example: 10 cases, the system flagged 3 of them -> 0.3.
+    """
+    pairs = _pair_up(preds, golds)
+    if not pairs:
+        raise ValueError("no case to score")
+
+    flagged = 0
+    for _gold, pred in pairs:
+        if pred.flagged:
+            flagged += 1
+    return flagged / len(pairs)
