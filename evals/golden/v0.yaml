@@ -1,0 +1,209 @@
+# Golden set v0: eval cases with their expected outcome.
+#
+# Fields per case:
+#   id                 unique case id
+#   description        the AI use case as a user would describe it (fictional company)
+#   expected_class     prohibited | high_risk | transparency | minimal | unclear
+#   expected_articles  corpus chunk ids the answer should cite (checked against the corpus)
+#   should_flag        true if a human should review this case
+#   source             chunk ids or a named Commission guideline that justify the label; may
+#                      list more chunks than expected_articles (definitions, recitals,
+#                      conditional duties) as supporting context
+#   review_status      draft | accepted | changed (only the maintainer sets accepted/changed)
+#   notes              why this is the expected outcome
+#
+# All cases below are DRAFTS for review. Companies are fictional.
+
+cases:
+  # --- prohibited -------------------------------------------------------------------------
+
+  - id: prohibited-001
+    description: >-
+      Veltrona Analytics sells a "citizen reliability score" to landlords and gyms. The
+      system combines people's social media posts, late bill payments and neighbourhood
+      complaints into a score. Landlords and gyms use a low score to refuse contracts.
+    expected_class: prohibited
+    expected_articles: [art-5-1-c]
+    should_flag: false
+    source: art-5-1-c
+    review_status: draft
+    notes: >-
+      Social scoring: people are scored over time on social behaviour, and the score leads
+      to unfavourable treatment in contexts unrelated to where the data was collected
+      (Art. 5(1)(c)(i)).
+
+  - id: prohibited-002
+    description: >-
+      Orbisane Data runs crawlers that download every face photo they can find on public
+      websites and in leaked CCTV footage. The faces are added to a facial recognition
+      database that customers can search with a photo of any person.
+    expected_class: prohibited
+    expected_articles: [art-5-1-e]
+    should_flag: false
+    source: art-5-1-e
+    review_status: draft
+    notes: >-
+      Creating or expanding a facial recognition database through untargeted scraping of
+      facial images from the internet or CCTV footage (Art. 5(1)(e)).
+
+  - id: prohibited-003
+    description: >-
+      Callvessel Services equips its call-centre agents' headsets and webcams with an AI that
+      infers whether each agent is frustrated, bored or angry during calls. Team leads see an
+      "emotion score" per agent and use it in quarterly performance reviews.
+    expected_class: prohibited
+    expected_articles: [art-5-1-f]
+    should_flag: false
+    source: art-5-1-f; art-3-pt-39
+    review_status: draft
+    notes: >-
+      Inferring employees' emotions from biometric data (face, voice) in the workplace, for
+      performance management. Neither medical nor safety reasons apply, so the exception in
+      Art. 5(1)(f) does not help.
+
+  # --- high_risk --------------------------------------------------------------------------
+
+  - id: high_risk-001
+    description: >-
+      Hirelattice offers recruiters an AI that reads all incoming CVs, ranks the candidates
+      for each job and rejects the lowest-ranked half automatically. Recruiters only see the
+      top half.
+    expected_class: high_risk
+    expected_articles: [anx-III-4-a, art-6-2]
+    should_flag: false
+    source: anx-III-4-a; art-6-2
+    review_status: draft
+    notes: >-
+      Analysing and filtering job applications and evaluating candidates is listed in
+      Annex III point 4(a); Art. 6(2) makes Annex III systems high-risk.
+
+  - id: high_risk-002
+    description: >-
+      Lendmoor Finance uses an AI model to decide whether private customers get a consumer
+      loan. The model predicts each applicant's chance of default from income, existing debt
+      and payment history, and sets their credit score.
+    expected_class: high_risk
+    expected_articles: [anx-III-5-b, art-6-2]
+    should_flag: false
+    source: anx-III-5-b; art-6-2
+    review_status: draft
+    notes: >-
+      Evaluating the creditworthiness of natural persons or establishing their credit score
+      is listed in Annex III point 5(b). It is not fraud detection, so the exception there
+      does not apply.
+
+  - id: high_risk-003
+    description: >-
+      Quillbeck Learning provides a vocational school with an AI that grades students' final
+      written exams. The AI's grade decides whether a student passes the module; teachers
+      only look at appeals.
+    expected_class: high_risk
+    expected_articles: [anx-III-3-b, art-6-2]
+    should_flag: false
+    source: anx-III-3-b; art-6-2
+    review_status: draft
+    notes: >-
+      Evaluating learning outcomes in a vocational training institution is listed in
+      Annex III point 3(b).
+
+  # --- transparency -----------------------------------------------------------------------
+
+  - id: transparency-001
+    description: >-
+      Brimworth Energy, a fictional electricity supplier, puts an AI chatbot on its website.
+      The chatbot answers questions about tariffs, meter readings and moving house, and hands
+      over to a human agent on request.
+    expected_class: transparency
+    expected_articles: [art-50-1]
+    should_flag: false
+    source: art-50-1
+    review_status: draft
+    notes: >-
+      An AI system that interacts directly with people: users must be told they are talking
+      to an AI (Art. 50(1)). It makes no decision listed in Annex III.
+
+  - id: transparency-002
+    description: >-
+      Pictavo Studio sells an online tool that generates realistic product photos and
+      advertising images from a text prompt. Marketing teams download the images and publish
+      them in campaigns.
+    expected_class: transparency
+    expected_articles: [art-50-2]
+    should_flag: false
+    source: art-50-2
+    review_status: draft
+    notes: >-
+      A provider of a system generating synthetic images must mark the outputs as
+      artificially generated in a machine-readable way (Art. 50(2)).
+
+  # --- minimal ----------------------------------------------------------------------------
+
+  - id: minimal-001
+    description: >-
+      Doughmere Bakeries uses an AI model to forecast how many loaves each of its shops will
+      sell tomorrow, based on past sales, weather and holidays. Shop managers use the
+      forecast to plan baking.
+    expected_class: minimal
+    expected_articles: []
+    should_flag: false
+    source: >-
+      Not an Art. 5 practice, not in Annex III, no Art. 50 duty; no decision about people.
+      Only voluntary codes of conduct apply (art-95-1).
+    review_status: draft
+    notes: >-
+      No prohibited practice, no Annex III area and no transparency duty. Nothing specific to
+      cite, so expected_articles is empty.
+
+  - id: minimal-002
+    description: >-
+      Tealpine Webshop filters the emails sent to its customer-service inbox. An AI model
+      moves spam and phishing messages into a separate folder so staff only see real
+      customer emails.
+    expected_class: minimal
+    expected_articles: []
+    should_flag: false
+    source: >-
+      Not an Art. 5 practice, not in Annex III, no Art. 50 duty. Only voluntary codes of conduct
+      apply (art-95-1).
+    review_status: draft
+    notes: >-
+      A spam filter makes no decision about people in a listed area and does not interact
+      with them. Nothing specific to cite, so expected_articles is empty.
+
+  # --- unclear ----------------------------------------------------------------------------
+
+  - id: unclear-001
+    description: >-
+      Rostrel Recruiting uses an AI that converts incoming CVs into a standard table (name,
+      education, years of experience) and marks applications that lack a required
+      certificate. Recruiters still read every application, but they often sort the table
+      by the "missing certificate" mark.
+    expected_class: unclear
+    expected_articles: [anx-III-4-a, art-6-3, rec-53]
+    should_flag: true
+    source: anx-III-4-a; art-6-3; rec-53
+    review_status: draft
+    notes: >-
+      Unclear because it sits between two readings. Converting CVs into structured data is a
+      "narrow procedural task" (Art. 6(3)(a), recital 53), which would mean not high-risk.
+      But marking missing certificates, which recruiters use for sorting, may materially
+      influence who gets selected: "filter job applications" in Annex III point 4(a). If the
+      provider relies on Art. 6(3), it must document that assessment (Art. 6(4)).
+
+  - id: unclear-002
+    description: >-
+      Haulbridge Logistics installs in-cab cameras in its delivery vans. The AI detects driver
+      drowsiness to prevent accidents, and also flags drivers who look "stressed or angry"
+      so a dispatcher can call them. The company says the whole system is for road safety.
+    expected_class: unclear
+    expected_articles: [art-5-1-f, rec-18, anx-III-1-c]
+    should_flag: true
+    source: art-5-1-f; rec-18; anx-III-1-c; art-50-3
+    review_status: draft
+    notes: >-
+      Unclear because two parts point different ways. Fatigue detection for drivers is a
+      physical state, not an emotion (recital 18). Inferring stress or anger of workers is
+      emotion recognition in the workplace, prohibited by Art. 5(1)(f) unless it is for
+      safety reasons. Whether the safety exception covers the stress/anger part is a
+      judgement call; if it does, the system is still high-risk emotion recognition
+      (Annex III point 1(c)) with an information duty (Art. 50(3)).
