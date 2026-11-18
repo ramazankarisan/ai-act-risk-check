@@ -48,7 +48,6 @@ def pred(
 # --- class_accuracy ---------------------------------------------------------------------
 
 
-@STUB
 def test_class_accuracy_all_correct_is_one() -> None:
     golds = [gold("a", RiskClass.HIGH_RISK), gold("b", RiskClass.MINIMAL)]
     preds = [pred("a", RiskClass.HIGH_RISK), pred("b", RiskClass.MINIMAL)]
@@ -58,7 +57,6 @@ def test_class_accuracy_all_correct_is_one() -> None:
     assert result == pytest.approx(1.0)
 
 
-@STUB
 def test_class_accuracy_docstring_example_excluding_unclear() -> None:
     golds = [
         gold("a", RiskClass.HIGH_RISK),
@@ -76,7 +74,6 @@ def test_class_accuracy_docstring_example_excluding_unclear() -> None:
     assert result == pytest.approx(0.5)
 
 
-@STUB
 def test_class_accuracy_docstring_example_including_unclear() -> None:
     golds = [
         gold("a", RiskClass.HIGH_RISK),
@@ -94,7 +91,6 @@ def test_class_accuracy_docstring_example_including_unclear() -> None:
     assert result == pytest.approx(2 / 3)
 
 
-@STUB
 def test_class_accuracy_unclear_prediction_on_definite_case_is_wrong() -> None:
     golds = [gold("a", RiskClass.PROHIBITED)]
     preds = [pred("a", RiskClass.UNCLEAR)]
@@ -104,7 +100,6 @@ def test_class_accuracy_unclear_prediction_on_definite_case_is_wrong() -> None:
     assert result == pytest.approx(0.0)
 
 
-@STUB
 def test_class_accuracy_all_unclear_gold_excluded_raises() -> None:
     golds = [gold("a", RiskClass.UNCLEAR), gold("b", RiskClass.UNCLEAR)]
     preds = [pred("a", RiskClass.UNCLEAR), pred("b", RiskClass.MINIMAL)]
@@ -113,7 +108,6 @@ def test_class_accuracy_all_unclear_gold_excluded_raises() -> None:
         class_accuracy(preds, golds, exclude_unclear=True)
 
 
-@STUB
 def test_class_accuracy_all_unclear_gold_included_is_scored() -> None:
     golds = [gold("a", RiskClass.UNCLEAR), gold("b", RiskClass.UNCLEAR)]
     preds = [pred("a", RiskClass.UNCLEAR), pred("b", RiskClass.MINIMAL)]
@@ -123,7 +117,6 @@ def test_class_accuracy_all_unclear_gold_included_is_scored() -> None:
     assert result == pytest.approx(0.5)
 
 
-@STUB
 def test_class_accuracy_empty_lists_raise() -> None:
     with pytest.raises(ValueError):
         class_accuracy([], [])
@@ -311,7 +304,13 @@ def test_flag_recall_all_flagged_is_one() -> None:
 
 # --- shared pairing rules ---------------------------------------------------------------
 
-METRICS: list[MetricFn] = [class_accuracy, citation_precision, citation_recall, flag_recall]
+# Metrics that are still stubs carry the STUB mark, so only they are expected to fail.
+METRICS = [
+    pytest.param(class_accuracy, id="class_accuracy"),
+    pytest.param(citation_precision, id="citation_precision", marks=STUB),
+    pytest.param(citation_recall, id="citation_recall", marks=STUB),
+    pytest.param(flag_recall, id="flag_recall", marks=STUB),
+]
 
 
 def _golds() -> list[GoldenCase]:
@@ -319,7 +318,6 @@ def _golds() -> list[GoldenCase]:
     return [gold("a", articles=["A"], flag=True), gold("b", articles=["B"], flag=True)]
 
 
-@STUB
 @pytest.mark.parametrize("metric", METRICS)
 def test_predictions_in_different_order_match_by_id(metric: MetricFn) -> None:
     golds = [
@@ -336,7 +334,6 @@ def test_predictions_in_different_order_match_by_id(metric: MetricFn) -> None:
     assert result == pytest.approx(1.0)
 
 
-@STUB
 @pytest.mark.parametrize("metric", METRICS)
 def test_missing_prediction_raises(metric: MetricFn) -> None:
     preds = [pred("a")]
@@ -345,7 +342,6 @@ def test_missing_prediction_raises(metric: MetricFn) -> None:
         metric(preds, _golds())
 
 
-@STUB
 @pytest.mark.parametrize("metric", METRICS)
 def test_prediction_for_unknown_case_raises(metric: MetricFn) -> None:
     preds = [pred("a"), pred("b"), pred("zzz")]
@@ -354,7 +350,6 @@ def test_prediction_for_unknown_case_raises(metric: MetricFn) -> None:
         metric(preds, _golds())
 
 
-@STUB
 @pytest.mark.parametrize("metric", METRICS)
 def test_duplicate_prediction_raises(metric: MetricFn) -> None:
     preds = [pred("a"), pred("a"), pred("b")]
