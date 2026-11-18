@@ -19,6 +19,7 @@ uv run pre-commit run --all-files               # all commit-stage hooks, like C
 uv run uvicorn ai_act_check.api:app --reload    # dev server on :8000
 uv run python scripts/download_ai_act.py        # fetch AI Act OJ HTML once (skips if present)
 uv run python -m ai_act_check.corpus            # build data/corpus/ai_act_chunks.jsonl
+uv run --env-file .env python -m evals.run_eval --provider foundry  # eval baseline (needs az login)
 ```
 
 ## Guardrails
@@ -59,12 +60,15 @@ Delegation rules:
 |---|---|
 | `src/ai_act_check/` | Application package (core, interfaces, adapters, API) |
 | `src/ai_act_check/api.py` | FastAPI app |
+| `src/ai_act_check/ports.py` | `LLMClient` and `Retriever` Protocols the core depends on |
+| `src/ai_act_check/adapters/` | Port implementations: BM25 retriever, Microsoft Foundry LLM client |
+| `src/ai_act_check/baseline.py` | One-call baseline classifier (retrieve, prompt, validate) |
 | `src/ai_act_check/corpus.py` | Parses the AI Act OJ HTML into `Chunk`s (recitals, article paragraphs/points, annex points) |
 | `scripts/` | One-off scripts, e.g. `download_ai_act.py` |
 | `tests/` | pytest tests |
 | `data/raw/` | Downloaded source HTML, committed byte-identical (whitespace hooks skip it) |
 | `data/corpus/` | Generated chunk files (`ai_act_chunks.jsonl`); rebuild with `python -m ai_act_check.corpus` |
-| `evals/` | Golden set and eval metrics |
+| `evals/` | Golden set, eval metrics and `run_eval.py` (writes `reports/eval-v0-<provider>.md`) |
 | `reports/` | Eval run outputs and baselines |
 | `.github/workflows/` | CI (`ci.yml`) and dependency audit (`security.yml`) |
 | `.claude/` | Claude Code settings, deny rules and hooks |
