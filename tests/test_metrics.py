@@ -9,7 +9,9 @@ from evals.metrics import (
     citation_recall,
     class_accuracy,
     flag_recall,
+    retrieval_recall,
     review_rate,
+    silent_miss_rate,
 )
 from evals.schema import GoldenCase, Prediction, ReviewStatus, RiskClass
 
@@ -42,10 +44,15 @@ def pred(
     cls: RiskClass = RiskClass.HIGH_RISK,
     cited: Sequence[str] = (),
     flagged: bool = False,
+    retrieved: Sequence[str] = (),
 ) -> Prediction:
     """Build a prediction."""
     return Prediction(
-        case_id=case_id, predicted_class=cls, cited_articles=list(cited), flagged=flagged
+        case_id=case_id,
+        predicted_class=cls,
+        cited_articles=list(cited),
+        flagged=flagged,
+        retrieved_articles=list(retrieved),
     )
 
 
@@ -372,6 +379,115 @@ def test_review_rate_empty_lists_raise() -> None:
         review_rate([], [])
 
 
+# --- silent_miss_rate -------------------------------------------------------------------
+
+
+def test_silent_miss_rate_docstring_example() -> None:
+    golds = [gold(str(i), RiskClass.HIGH_RISK) for i in range(10)]
+    preds = [pred(str(i), RiskClass.HIGH_RISK) for i in range(7)]
+    preds.append(pred("7", RiskClass.MINIMAL, flagged=True))
+    preds.append(pred("8", RiskClass.MINIMAL))
+    preds.append(pred("9", RiskClass.MINIMAL))
+
+    result = silent_miss_rate(preds, golds)
+
+    assert result == pytest.approx(0.2)
+
+
+def test_silent_miss_rate_all_correct_is_zero() -> None:
+    golds = [gold("a", RiskClass.HIGH_RISK), gold("b", RiskClass.MINIMAL)]
+    preds = [pred("a", RiskClass.HIGH_RISK), pred("b", RiskClass.MINIMAL)]
+
+    result = silent_miss_rate(preds, golds)
+
+    assert result == pytest.approx(0.0)
+
+
+def test_silent_miss_rate_wrong_but_flagged_is_not_a_miss() -> None:
+    golds = [gold("a", RiskClass.HIGH_RISK)]
+    preds = [pred("a", RiskClass.MINIMAL, flagged=True)]
+
+    result = silent_miss_rate(preds, golds)
+
+    assert result == pytest.approx(0.0)
+
+
+def test_silent_miss_rate_correct_and_flagged_is_not_a_miss() -> None:
+    golds = [gold("a", RiskClass.HIGH_RISK)]
+    preds = [pred("a", RiskClass.HIGH_RISK, flagged=True)]
+
+    result = silent_miss_rate(preds, golds)
+
+    assert result == pytest.approx(0.0)
+
+
+def test_silent_miss_rate_gold_unclear_predicted_definite_unflagged_is_a_miss() -> None:
+    golds = [gold("a", RiskClass.UNCLEAR)]
+    preds = [pred("a", RiskClass.HIGH_RISK, flagged=False)]
+
+    result = silent_miss_rate(preds, golds)
+
+    assert result == pytest.approx(1.0)
+
+
+def test_silent_miss_rate_empty_lists_raise() -> None:
+    with pytest.raises(ValueError):
+        silent_miss_rate([], [])
+
+
+# --- retrieval_recall -------------------------------------------------------------------
+
+
+def test_retrieval_recall_docstring_example() -> None:
+    golds = [gold("a", articles=["A", "B"])]
+    preds = [pred("a", retrieved=["A", "C", "D"])]
+
+    result = retrieval_recall(preds, golds)
+
+    assert result == pytest.approx(0.5)
+
+
+def test_retrieval_recall_nothing_expected_is_one() -> None:
+    golds = [gold("a", articles=[])]
+    preds = [pred("a", retrieved=[])]
+
+    result = retrieval_recall(preds, golds)
+
+    assert result == pytest.approx(1.0)
+
+
+def test_retrieval_recall_duplicates_count_once() -> None:
+    golds = [gold("a", articles=["A", "B"])]
+    preds = [pred("a", retrieved=["A", "A"])]
+
+    result = retrieval_recall(preds, golds)
+
+    assert result == pytest.approx(0.5)
+
+
+def test_retrieval_recall_is_mean_over_cases() -> None:
+    golds = [gold("a", articles=["A"]), gold("b", articles=["B"])]
+    preds = [pred("a", retrieved=["A"]), pred("b", retrieved=[])]
+
+    result = retrieval_recall(preds, golds)
+
+    assert result == pytest.approx(0.5)
+
+
+def test_retrieval_recall_ignores_cited_articles() -> None:
+    golds = [gold("a", articles=["A"])]
+    preds = [pred("a", cited=["A"], retrieved=[])]
+
+    result = retrieval_recall(preds, golds)
+
+    assert result == pytest.approx(0.0)
+
+
+def test_retrieval_recall_empty_lists_raise() -> None:
+    with pytest.raises(ValueError):
+        retrieval_recall([], [])
+
+
 # --- shared pairing rules ---------------------------------------------------------------
 
 METRICS: list[MetricFn] = [
@@ -380,6 +496,8 @@ METRICS: list[MetricFn] = [
     citation_recall,
     flag_recall,
     review_rate,
+    silent_miss_rate,
+    retrieval_recall,
 ]
 
 
@@ -395,13 +513,16 @@ def test_predictions_in_different_order_match_by_id(metric: MetricFn) -> None:
         gold("b", RiskClass.MINIMAL, ["B"], flag=True),
     ]
     in_order = [
-        pred("a", RiskClass.HIGH_RISK, ["A"], flagged=True),
-        pred("b", RiskClass.MINIMAL, ["B"], flagged=True),
+        pred("a", RiskClass.HIGH_RISK, ["A"], flagged=True, retrieved=["A"]),
+        pred("b", RiskClass.MINIMAL, ["B"], flagged=True, retrieved=["B"]),
     ]
 
     result = metric(list(reversed(in_order)), golds)
 
-    assert result == pytest.approx(1.0)
+    # Lower-is-better metrics (silent_miss_rate) score 0.0 here, so compare with the
+    # in-order result instead of a fixed 1.0.
+    assert result == pytest.approx(metric(in_order, golds))
+    assert result in (pytest.approx(0.0), pytest.approx(1.0))
 
 
 @pytest.mark.parametrize("metric", METRICS)
