@@ -1,6 +1,7 @@
 """Tests for the eval runner: prediction mapping, statistics, pricing and the report."""
 
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import cast
 
 import pytest
@@ -191,3 +192,25 @@ def test_build_report_shows_cost_when_price_configured(monkeypatch: pytest.Monke
 def test_make_llm_unknown_provider_raises_value_error() -> None:
     with pytest.raises(ValueError):
         run_eval.make_llm("x")
+
+
+def test_build_report_without_runs_raises_value_error() -> None:
+    with pytest.raises(ValueError):
+        run_eval.build_report([], "foundry", "dep", datetime(2026, 11, 18, tzinfo=UTC))
+
+
+def test_main_writes_report_for_provider(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """main wires golden set, LLM and retriever together and writes the report file."""
+    from ai_act_check.adapters.bm25_retriever import BM25Retriever
+
+    monkeypatch.setattr(run_eval, "REPORTS_DIR", tmp_path)
+    monkeypatch.setattr(run_eval, "load_golden", lambda path: CASES)
+    monkeypatch.setattr(run_eval, "make_llm", lambda provider: (FakeLLM(), "dep-x"))
+    monkeypatch.setattr(BM25Retriever, "from_corpus", lambda: FakeRetriever())
+
+    run_eval.main(["--provider", "foundry"])
+
+    report = (tmp_path / "eval-v0-foundry.md").read_text()
+    assert "# Eval v0: baseline on foundry" in report
+    assert "`dep-x`" in report
+    assert "| c1 |" in report
