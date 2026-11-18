@@ -124,5 +124,13 @@ def flag_recall(preds: Sequence[Prediction], golds: Sequence[GoldenCase]) -> flo
 
     Example: 4 cases should be flagged, the system flagged 3 of them -> 0.75.
     """
-    # TODO(ramazan): implement
-    raise NotImplementedError
+    pairs = _pair_up(preds, golds)
+    should_flag = [(gold, pred) for gold, pred in pairs if gold.should_flag]
+    if not should_flag:
+        raise ValueError("no case should be flagged, so there is nothing to score")
+
+    flagged = 0
+    for _gold, pred in should_flag:
+        if pred.flagged:
+            flagged += 1
+    return flagged / len(should_flag)

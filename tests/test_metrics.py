@@ -7,10 +7,6 @@ import pytest
 from evals.metrics import citation_precision, citation_recall, class_accuracy, flag_recall
 from evals.schema import GoldenCase, Prediction, ReviewStatus, RiskClass
 
-STUB = pytest.mark.xfail(
-    raises=NotImplementedError, strict=True, reason="stub: not implemented yet"
-)
-
 MetricFn = Callable[[Sequence[Prediction], Sequence[GoldenCase]], float]
 
 
@@ -249,7 +245,6 @@ def test_citation_recall_empty_lists_raise() -> None:
 # --- flag_recall ------------------------------------------------------------------------
 
 
-@STUB
 def test_flag_recall_docstring_example_three_of_four() -> None:
     golds = [gold(str(i), flag=True) for i in range(4)]
     preds = [pred(str(i), flagged=i < 3) for i in range(4)]
@@ -259,7 +254,6 @@ def test_flag_recall_docstring_example_three_of_four() -> None:
     assert result == pytest.approx(0.75)
 
 
-@STUB
 def test_flag_recall_flags_on_unflagged_cases_do_not_count() -> None:
     golds = [gold("a", flag=True), gold("b", flag=False)]
     preds = [pred("a", flagged=False), pred("b", flagged=True)]
@@ -269,7 +263,6 @@ def test_flag_recall_flags_on_unflagged_cases_do_not_count() -> None:
     assert result == pytest.approx(0.0)
 
 
-@STUB
 def test_flag_recall_without_should_flag_case_raises() -> None:
     golds = [gold("a", flag=False)]
     preds = [pred("a", flagged=True)]
@@ -278,7 +271,6 @@ def test_flag_recall_without_should_flag_case_raises() -> None:
         flag_recall(preds, golds)
 
 
-@STUB
 def test_flag_recall_all_flagged_is_one() -> None:
     golds = [gold("a", flag=True), gold("b", flag=True)]
     preds = [pred("a", flagged=True), pred("b", flagged=True)]
@@ -290,13 +282,7 @@ def test_flag_recall_all_flagged_is_one() -> None:
 
 # --- shared pairing rules ---------------------------------------------------------------
 
-# Metrics that are still stubs carry the STUB mark, so only they are expected to fail.
-METRICS = [
-    pytest.param(class_accuracy, id="class_accuracy"),
-    pytest.param(citation_precision, id="citation_precision"),
-    pytest.param(citation_recall, id="citation_recall"),
-    pytest.param(flag_recall, id="flag_recall", marks=STUB),
-]
+METRICS: list[MetricFn] = [class_accuracy, citation_precision, citation_recall, flag_recall]
 
 
 def _golds() -> list[GoldenCase]:
