@@ -65,15 +65,16 @@ def class_accuracy(
 
 
 def citation_precision(preds: Sequence[Prediction], golds: Sequence[GoldenCase]) -> float:
-    """Mean per-case share of cited chunk ids that are expected: "no wrong citations".
+    """Mean per-case share of cited chunk ids that are allowed: "no wrong citations".
 
-    Per case, cited and expected ids are compared as sets (duplicates count once):
+    Allowed ids are the expected ids plus the acceptable ids of the golden case.
+    Per case, ids are compared as sets (duplicates count once):
     - cited empty, expected empty     -> 1.0
     - cited empty, expected not empty -> 0.0
-    - otherwise                       -> |cited & expected| / |cited|
+    - otherwise                       -> |cited & (expected | acceptable)| / |cited|
     The result is the average over all cases. Raises `ValueError` for an empty case list.
 
-    Example: expected {A, B}, cited {A, C} -> 1/2 = 0.5.
+    Example: expected {A, B}, acceptable {C}, cited {A, C, D} -> 2/3.
     """
     pairs = _pair_up(preds, golds)
     if not pairs:
@@ -82,12 +83,13 @@ def citation_precision(preds: Sequence[Prediction], golds: Sequence[GoldenCase])
     total = 0.0
     for gold, pred in pairs:
         expected = set(gold.expected_articles)
+        allowed = expected | set(gold.acceptable_articles)
         cited = set(pred.cited_articles)
         if not cited:
             # Citing nothing is only right when nothing was expected.
             total += 1.0 if not expected else 0.0
         else:
-            total += len(cited & expected) / len(cited)
+            total += len(cited & allowed) / len(cited)
     return total / len(pairs)
 
 
