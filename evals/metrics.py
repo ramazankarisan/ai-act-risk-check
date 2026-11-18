@@ -75,8 +75,20 @@ def citation_precision(preds: Sequence[Prediction], golds: Sequence[GoldenCase])
 
     Example: expected {A, B}, cited {A, C} -> 1/2 = 0.5.
     """
-    # TODO(ramazan): implement
-    raise NotImplementedError
+    pairs = _pair_up(preds, golds)
+    if not pairs:
+        raise ValueError("no case to score")
+
+    total = 0.0
+    for gold, pred in pairs:
+        expected = set(gold.expected_articles)
+        cited = set(pred.cited_articles)
+        if not cited:
+            # Citing nothing is only right when nothing was expected.
+            total += 1.0 if not expected else 0.0
+        else:
+            total += len(cited & expected) / len(cited)
+    return total / len(pairs)
 
 
 def citation_recall(preds: Sequence[Prediction], golds: Sequence[GoldenCase]) -> float:

@@ -125,7 +125,6 @@ def test_class_accuracy_empty_lists_raise() -> None:
 # --- citation_precision -----------------------------------------------------------------
 
 
-@STUB
 def test_citation_precision_docstring_example() -> None:
     golds = [gold("a", articles=["A", "B"])]
     preds = [pred("a", cited=["A", "C"])]
@@ -135,7 +134,6 @@ def test_citation_precision_docstring_example() -> None:
     assert result == pytest.approx(0.5)
 
 
-@STUB
 def test_citation_precision_both_empty_is_one() -> None:
     golds = [gold("a", articles=[])]
     preds = [pred("a", cited=[])]
@@ -145,7 +143,6 @@ def test_citation_precision_both_empty_is_one() -> None:
     assert result == pytest.approx(1.0)
 
 
-@STUB
 def test_citation_precision_nothing_cited_but_expected_is_zero() -> None:
     golds = [gold("a", articles=["A"])]
     preds = [pred("a", cited=[])]
@@ -155,7 +152,6 @@ def test_citation_precision_nothing_cited_but_expected_is_zero() -> None:
     assert result == pytest.approx(0.0)
 
 
-@STUB
 def test_citation_precision_cited_but_nothing_expected_is_zero() -> None:
     golds = [gold("a", articles=[])]
     preds = [pred("a", cited=["A"])]
@@ -165,7 +161,6 @@ def test_citation_precision_cited_but_nothing_expected_is_zero() -> None:
     assert result == pytest.approx(0.0)
 
 
-@STUB
 def test_citation_precision_duplicates_count_once() -> None:
     golds = [gold("a", articles=["A"])]
     preds = [pred("a", cited=["A", "A"])]
@@ -175,7 +170,6 @@ def test_citation_precision_duplicates_count_once() -> None:
     assert result == pytest.approx(1.0)
 
 
-@STUB
 def test_citation_precision_is_mean_over_cases() -> None:
     golds = [gold("a", articles=["A"]), gold("b", articles=["B"])]
     preds = [pred("a", cited=["A"]), pred("b", cited=["X"])]
@@ -185,7 +179,6 @@ def test_citation_precision_is_mean_over_cases() -> None:
     assert result == pytest.approx(0.5)
 
 
-@STUB
 def test_citation_precision_empty_lists_raise() -> None:
     with pytest.raises(ValueError):
         citation_precision([], [])
@@ -300,7 +293,7 @@ def test_flag_recall_all_flagged_is_one() -> None:
 # Metrics that are still stubs carry the STUB mark, so only they are expected to fail.
 METRICS = [
     pytest.param(class_accuracy, id="class_accuracy"),
-    pytest.param(citation_precision, id="citation_precision", marks=STUB),
+    pytest.param(citation_precision, id="citation_precision"),
     pytest.param(citation_recall, id="citation_recall"),
     pytest.param(flag_recall, id="flag_recall", marks=STUB),
 ]
