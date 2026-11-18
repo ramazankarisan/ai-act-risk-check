@@ -25,7 +25,9 @@ dev = [
     "pre-commit>=4.7.0",
     "pytest>=9.2.0",
     "pytest-cov>=7.1.0",
+    "pyyaml>=6.0.3",
     "ruff>=0.17.5",
+    "types-pyyaml>=6.0.12.20261113",
 ]
 
 [tool.uv]
@@ -42,12 +44,13 @@ select = ["E", "F", "I", "UP", "B"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["."]  # makes the top-level `evals` package importable in tests
 
 [tool.mypy]
 python_version = "3.12"
 strict = true
-files = ["src", "tests", "scripts"]
+files = ["src", "tests", "scripts", "evals"]
 
 [tool.coverage.run]
-source = ["ai_act_check"]
+source = ["ai_act_check", "evals"]
 branch = true
