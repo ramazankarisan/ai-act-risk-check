@@ -106,6 +106,12 @@ def test_run_maps_answer_to_prediction() -> None:
     assert second.flagged is True
 
 
+def test_run_maps_retrieved_ids_to_prediction() -> None:
+    runs = run_eval.run(CASES[:1], FakeLLM(), FakeRetriever())
+
+    assert runs[0].prediction.retrieved_articles == ["art-5-1-f", "art-6-2"]
+
+
 def test_run_stores_retrieved_ids_in_result() -> None:
     runs = run_eval.run(CASES[:1], FakeLLM(), FakeRetriever(), top_k=1)
 
@@ -170,6 +176,27 @@ def test_build_report_contains_metrics_model_and_case_rows() -> None:
         assert f"| {case.id} |" in report
 
 
+def test_build_report_contains_new_metrics_and_columns() -> None:
+    runs = run_eval.run(CASES, FakeLLM(), FakeRetriever())
+
+    report = run_eval.build_report(runs, "foundry", "d", datetime(2026, 1, 2, tzinfo=UTC))
+
+    assert "silent miss rate" in report
+    assert "retrieval recall@8" in report
+    assert "| silent miss |" in report
+    assert "| retrieval recall |" in report
+
+
+def test_build_report_uses_run_name_in_title() -> None:
+    runs = run_eval.run(CASES, FakeLLM(), FakeRetriever())
+
+    report = run_eval.build_report(
+        runs, "foundry", "d", datetime(2026, 1, 2, tzinfo=UTC), run_name="v0b"
+    )
+
+    assert report.startswith("# Eval v0b")
+
+
 def test_build_report_shows_na_cost_when_no_price(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(run_eval, "PRICES_USD_PER_1M", {})
     runs = run_eval.run(CASES, FakeLLM(), FakeRetriever())
@@ -214,3 +241,21 @@ def test_main_writes_report_for_provider(monkeypatch: pytest.MonkeyPatch, tmp_pa
     assert "# Eval v0: baseline on foundry" in report
     assert "`dep-x`" in report
     assert "| c1 |" in report
+
+
+def test_main_run_name_sets_report_title_and_file_name(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """--run-name changes both the report title and the file name."""
+    from ai_act_check.adapters.bm25_retriever import BM25Retriever
+
+    monkeypatch.setattr(run_eval, "REPORTS_DIR", tmp_path)
+    monkeypatch.setattr(run_eval, "load_golden", lambda path: CASES)
+    monkeypatch.setattr(run_eval, "make_llm", lambda provider: (FakeLLM(), "dep-x"))
+    monkeypatch.setattr(BM25Retriever, "from_corpus", lambda: FakeRetriever())
+
+    run_eval.main(["--provider", "foundry", "--run-name", "v0b"])
+
+    report = (tmp_path / "eval-v0b-foundry.md").read_text()
+    assert "# Eval v0b: baseline on foundry" in report
+    assert not (tmp_path / "eval-v0-foundry.md").exists()

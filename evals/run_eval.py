@@ -4,7 +4,7 @@ Usage (from the repo root, signed in with `az login`):
 
     uv run --env-file .env python -m evals.run_eval --provider foundry
 
-Writes reports/eval-v0-<provider>.md.
+Writes reports/eval-<run-name>-<provider>.md (run name defaults to v0).
 """
 
 import argparse
@@ -21,7 +21,9 @@ from evals.metrics import (
     citation_recall,
     class_accuracy,
     flag_recall,
+    retrieval_recall,
     review_rate,
+    silent_miss_rate,
 )
 from evals.schema import GOLDEN_V0_PATH, GoldenCase, Prediction, load_golden
 
@@ -54,6 +56,7 @@ def to_prediction(case_id: str, result: BaselineResult) -> Prediction:
         predicted_class=result.answer.risk_class,
         cited_articles=result.answer.cited_chunk_ids,
         flagged=result.answer.needs_review,
+        retrieved_articles=result.retrieved_ids,
     )
 
 
@@ -74,12 +77,14 @@ def compute_metrics(runs: Sequence[CaseRun]) -> dict[str, float]:
     preds = [r.prediction for r in runs]
     golds = [r.gold for r in runs]
     return {
+        "silent miss rate (lower is better)": silent_miss_rate(preds, golds),
         "class accuracy (definite cases)": class_accuracy(preds, golds),
         "class accuracy (all cases)": class_accuracy(preds, golds, exclude_unclear=False),
         "citation precision": citation_precision(preds, golds),
         "citation recall": citation_recall(preds, golds),
         "flag recall": flag_recall(preds, golds),
         "review rate": review_rate(preds, golds),
+        f"retrieval recall@{TOP_K}": retrieval_recall(preds, golds),
     }
 
 
@@ -108,12 +113,18 @@ def estimate_cost(model: str, input_tokens: int, output_tokens: int) -> float | 
     return (input_tokens * price[0] + output_tokens * price[1]) / 1_000_000
 
 
-def build_report(runs: Sequence[CaseRun], provider: str, deployment: str, run_at: datetime) -> str:
+def build_report(
+    runs: Sequence[CaseRun],
+    provider: str,
+    deployment: str,
+    run_at: datetime,
+    run_name: str = "v0",
+) -> str:
     """Render the Markdown report: run info, metrics, cost and latency, per-case table."""
     if not runs:
         raise ValueError("no case runs to report")
     sections = [
-        _header(runs, provider, deployment, run_at),
+        _header(runs, provider, deployment, run_at, run_name),
         _metrics_section(runs),
         _cost_section(runs),
         _cases_section(runs),
@@ -126,12 +137,14 @@ def _models(runs: Sequence[CaseRun]) -> list[str]:
     return sorted({r.result.usage.model for r in runs})
 
 
-def _header(runs: Sequence[CaseRun], provider: str, deployment: str, run_at: datetime) -> str:
+def _header(
+    runs: Sequence[CaseRun], provider: str, deployment: str, run_at: datetime, run_name: str
+) -> str:
     """Title and run information."""
     models = ", ".join(f"`{m}`" for m in _models(runs))
     return "\n".join(
         [
-            f"# Eval v0: baseline on {provider}",
+            f"# Eval {run_name}: baseline on {provider}",
             "",
             f"- Run at: {run_at:%Y-%m-%d %H:%M} UTC",
             f"- Deployment: `{deployment}`",
@@ -185,8 +198,8 @@ def _cases_section(runs: Sequence[CaseRun]) -> str:
         "## Per case",
         "",
         "| id | expected | predicted | ok | flag should/got | expected ids | cited ids"
-        " | precision | recall | latency ms | tokens |",
-        "|---|---|---|---|---|---|---|---|---|---|---|",
+        " | precision | recall | silent miss | retrieval recall | latency ms | tokens |",
+        "|---|---|---|---|---|---|---|---|---|---|---|---|---|",
     ]
     lines += [_case_row(r) for r in runs]
     lines += ["", "## Reasoning", ""]
@@ -205,11 +218,14 @@ def _case_row(r: CaseRun) -> str:
     flags = f"{_yes_no(gold.should_flag)}/{_yes_no(pred.flagged)}"
     precision = citation_precision([pred], [gold])
     recall = citation_recall([pred], [gold])
+    silent = _yes_no(silent_miss_rate([pred], [gold]) > 0)
+    retrieved = retrieval_recall([pred], [gold])
     tokens = usage.input_tokens + usage.output_tokens
     return (
         f"| {gold.id} | {gold.expected_class} | {pred.predicted_class} | {ok} | {flags}"
         f" | {_ids(gold.expected_articles)} | {_ids(pred.cited_articles)}"
-        f" | {precision:.2f} | {recall:.2f} | {usage.latency_ms:,.0f} | {tokens:,} |"
+        f" | {precision:.2f} | {recall:.2f} | {silent} | {retrieved:.2f}"
+        f" | {usage.latency_ms:,.0f} | {tokens:,} |"
     )
 
 
@@ -239,6 +255,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0] if __doc__ else None)
     parser.add_argument("--provider", choices=PROVIDERS, required=True)
     parser.add_argument("--golden", type=Path, default=GOLDEN_V0_PATH)
+    parser.add_argument("--run-name", default="v0", help="report name part, e.g. v0b")
     args = parser.parse_args(argv)
 
     from ai_act_check.adapters.bm25_retriever import BM25Retriever
@@ -249,8 +266,9 @@ def main(argv: Sequence[str] | None = None) -> None:
     runs = run(cases, llm, BM25Retriever.from_corpus())
 
     REPORTS_DIR.mkdir(exist_ok=True)
-    out = REPORTS_DIR / f"eval-v0-{args.provider}.md"
-    out.write_text(build_report(runs, args.provider, deployment, datetime.now(UTC)) + "\n")
+    out = REPORTS_DIR / f"eval-{args.run_name}-{args.provider}.md"
+    report = build_report(runs, args.provider, deployment, datetime.now(UTC), args.run_name)
+    out.write_text(report + "\n")
     print(f"Wrote {out}")
 
 
