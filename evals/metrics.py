@@ -157,3 +157,52 @@ def review_rate(preds: Sequence[Prediction], golds: Sequence[GoldenCase]) -> flo
         if pred.flagged:
             flagged += 1
     return flagged / len(pairs)
+
+
+def silent_miss_rate(preds: Sequence[Prediction], golds: Sequence[GoldenCase]) -> float:
+    """Share of all cases with a wrong class that were not flagged: "errors no human sees".
+
+    A case is a silent miss if the predicted class differs from the expected class and the
+    prediction is not flagged for review. A wrong but flagged case is not a silent miss,
+    because a human will check it. Lower is better; 0.0 is the goal.
+    Raises `ValueError` for an empty case list.
+
+    Example: 10 cases, 3 wrong, 1 of those flagged -> 2/10 = 0.2.
+    """
+    pairs = _pair_up(preds, golds)
+    if not pairs:
+        raise ValueError("no case to score")
+
+    silent = 0
+    for gold, pred in pairs:
+        wrong = pred.predicted_class != gold.expected_class
+        if wrong and not pred.flagged:
+            silent += 1
+    return silent / len(pairs)
+
+
+def retrieval_recall(preds: Sequence[Prediction], golds: Sequence[GoldenCase]) -> float:
+    """Mean per-case share of expected chunk ids the retriever returned: "did the LLM see it".
+
+    Compares `Prediction.retrieved_articles` (what the retriever returned, e.g. its top 8)
+    with `GoldenCase.expected_articles`, as sets:
+    - expected empty -> 1.0 (nothing to find)
+    - otherwise      -> |retrieved & expected| / |expected|
+    A low score means retrieval misses, not judge mistakes: the LLM never saw the chunk.
+    The result is the average over all cases. Raises `ValueError` for an empty case list.
+
+    Example: expected {A, B}, retrieved {A, C, D} -> 1/2 = 0.5.
+    """
+    pairs = _pair_up(preds, golds)
+    if not pairs:
+        raise ValueError("no case to score")
+
+    total = 0.0
+    for gold, pred in pairs:
+        expected = set(gold.expected_articles)
+        retrieved = set(pred.retrieved_articles)
+        if not expected:
+            total += 1.0  # nothing to find, so nothing was missed
+        else:
+            total += len(retrieved & expected) / len(expected)
+    return total / len(pairs)

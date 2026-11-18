@@ -69,6 +69,8 @@ class Prediction(BaseModel):
     case_id: str
     predicted_class: RiskClass
     cited_articles: list[str] = Field(default_factory=list)  # corpus chunk ids
+    # chunk ids the retriever returned for this case (what the LLM got to read)
+    retrieved_articles: list[str] = Field(default_factory=list)
     flagged: bool
 
 

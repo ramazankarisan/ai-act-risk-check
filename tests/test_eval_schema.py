@@ -267,3 +267,9 @@ def test_prediction_cited_articles_defaults_to_empty_list() -> None:
     prediction = Prediction(case_id="a", predicted_class=RiskClass.MINIMAL, flagged=False)
 
     assert prediction.cited_articles == []
+
+
+def test_prediction_retrieved_articles_defaults_to_empty_list() -> None:
+    prediction = Prediction(case_id="a", predicted_class=RiskClass.MINIMAL, flagged=False)
+
+    assert prediction.retrieved_articles == []
