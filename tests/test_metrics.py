@@ -194,7 +194,6 @@ def test_citation_precision_empty_lists_raise() -> None:
 # --- citation_recall --------------------------------------------------------------------
 
 
-@STUB
 def test_citation_recall_docstring_example() -> None:
     golds = [gold("a", articles=["A", "B"])]
     preds = [pred("a", cited=["A", "C"])]
@@ -204,7 +203,6 @@ def test_citation_recall_docstring_example() -> None:
     assert result == pytest.approx(0.5)
 
 
-@STUB
 def test_citation_recall_nothing_expected_is_one() -> None:
     golds = [gold("a", articles=[])]
     preds = [pred("a", cited=[])]
@@ -214,7 +212,6 @@ def test_citation_recall_nothing_expected_is_one() -> None:
     assert result == pytest.approx(1.0)
 
 
-@STUB
 def test_citation_recall_nothing_expected_is_one_even_if_cited() -> None:
     golds = [gold("a", articles=[])]
     preds = [pred("a", cited=["A"])]
@@ -224,7 +221,6 @@ def test_citation_recall_nothing_expected_is_one_even_if_cited() -> None:
     assert result == pytest.approx(1.0)
 
 
-@STUB
 def test_citation_recall_nothing_cited_but_expected_is_zero() -> None:
     golds = [gold("a", articles=["A"])]
     preds = [pred("a", cited=[])]
@@ -234,7 +230,6 @@ def test_citation_recall_nothing_cited_but_expected_is_zero() -> None:
     assert result == pytest.approx(0.0)
 
 
-@STUB
 def test_citation_recall_duplicates_count_once() -> None:
     golds = [gold("a", articles=["A", "B"])]
     preds = [pred("a", cited=["A", "A"])]
@@ -244,7 +239,6 @@ def test_citation_recall_duplicates_count_once() -> None:
     assert result == pytest.approx(0.5)
 
 
-@STUB
 def test_citation_recall_is_mean_over_cases() -> None:
     golds = [gold("a", articles=["A"]), gold("b", articles=["B"])]
     preds = [pred("a", cited=["A"]), pred("b", cited=[])]
@@ -254,7 +248,6 @@ def test_citation_recall_is_mean_over_cases() -> None:
     assert result == pytest.approx(0.5)
 
 
-@STUB
 def test_citation_recall_empty_lists_raise() -> None:
     with pytest.raises(ValueError):
         citation_recall([], [])
@@ -308,7 +301,7 @@ def test_flag_recall_all_flagged_is_one() -> None:
 METRICS = [
     pytest.param(class_accuracy, id="class_accuracy"),
     pytest.param(citation_precision, id="citation_precision", marks=STUB),
-    pytest.param(citation_recall, id="citation_recall", marks=STUB),
+    pytest.param(citation_recall, id="citation_recall"),
     pytest.param(flag_recall, id="flag_recall", marks=STUB),
 ]
 
