@@ -12,7 +12,7 @@
 #   review_status      draft | accepted | changed (only the maintainer sets accepted/changed)
 #   notes              why this is the expected outcome
 #
-# All cases below are DRAFTS for review. Companies are fictional.
+# Reviewed by the maintainer on 2026-11-18. Companies are fictional.
 
 cases:
   # --- prohibited -------------------------------------------------------------------------
@@ -26,7 +26,7 @@ cases:
     expected_articles: [art-5-1-c]
     should_flag: false
     source: art-5-1-c
-    review_status: draft
+    review_status: accepted
     notes: >-
       Social scoring: people are scored over time on social behaviour, and the score leads
       to unfavourable treatment in contexts unrelated to where the data was collected
@@ -41,7 +41,7 @@ cases:
     expected_articles: [art-5-1-e]
     should_flag: false
     source: art-5-1-e
-    review_status: draft
+    review_status: accepted
     notes: >-
       Creating or expanding a facial recognition database through untargeted scraping of
       facial images from the internet or CCTV footage (Art. 5(1)(e)).
@@ -55,7 +55,7 @@ cases:
     expected_articles: [art-5-1-f]
     should_flag: false
     source: art-5-1-f; art-3-pt-39
-    review_status: draft
+    review_status: accepted
     notes: >-
       Inferring employees' emotions from biometric data (face, voice) in the workplace, for
       performance management. Neither medical nor safety reasons apply, so the exception in
@@ -72,7 +72,7 @@ cases:
     expected_articles: [anx-III-4-a, art-6-2]
     should_flag: false
     source: anx-III-4-a; art-6-2
-    review_status: draft
+    review_status: accepted
     notes: >-
       Analysing and filtering job applications and evaluating candidates is listed in
       Annex III point 4(a); Art. 6(2) makes Annex III systems high-risk.
@@ -86,7 +86,7 @@ cases:
     expected_articles: [anx-III-5-b, art-6-2]
     should_flag: false
     source: anx-III-5-b; art-6-2
-    review_status: draft
+    review_status: accepted
     notes: >-
       Evaluating the creditworthiness of natural persons or establishing their credit score
       is listed in Annex III point 5(b). It is not fraud detection, so the exception there
@@ -101,7 +101,7 @@ cases:
     expected_articles: [anx-III-3-b, art-6-2]
     should_flag: false
     source: anx-III-3-b; art-6-2
-    review_status: draft
+    review_status: accepted
     notes: >-
       Evaluating learning outcomes in a vocational training institution is listed in
       Annex III point 3(b).
@@ -117,7 +117,7 @@ cases:
     expected_articles: [art-50-1]
     should_flag: false
     source: art-50-1
-    review_status: draft
+    review_status: accepted
     notes: >-
       An AI system that interacts directly with people: users must be told they are talking
       to an AI (Art. 50(1)). It makes no decision listed in Annex III.
@@ -131,7 +131,7 @@ cases:
     expected_articles: [art-50-2]
     should_flag: false
     source: art-50-2
-    review_status: draft
+    review_status: accepted
     notes: >-
       A provider of a system generating synthetic images must mark the outputs as
       artificially generated in a machine-readable way (Art. 50(2)).
@@ -144,15 +144,15 @@ cases:
       sell tomorrow, based on past sales, weather and holidays. Shop managers use the
       forecast to plan baking.
     expected_class: minimal
-    expected_articles: []
+    expected_articles: [art-95-1]
     should_flag: false
     source: >-
       Not an Art. 5 practice, not in Annex III, no Art. 50 duty; no decision about people.
       Only voluntary codes of conduct apply (art-95-1).
-    review_status: draft
+    review_status: changed
     notes: >-
-      No prohibited practice, no Annex III area and no transparency duty. Nothing specific to
-      cite, so expected_articles is empty.
+      No prohibited practice, no Annex III area and no transparency duty. The answer should
+      cite art-95-1: only voluntary codes of conduct apply.
 
   - id: minimal-002
     description: >-
@@ -160,15 +160,15 @@ cases:
       moves spam and phishing messages into a separate folder so staff only see real
       customer emails.
     expected_class: minimal
-    expected_articles: []
+    expected_articles: [art-95-1]
     should_flag: false
     source: >-
       Not an Art. 5 practice, not in Annex III, no Art. 50 duty. Only voluntary codes of conduct
       apply (art-95-1).
-    review_status: draft
+    review_status: changed
     notes: >-
       A spam filter makes no decision about people in a listed area and does not interact
-      with them. Nothing specific to cite, so expected_articles is empty.
+      with them. The answer should cite art-95-1: only voluntary codes of conduct apply.
 
   # --- unclear ----------------------------------------------------------------------------
 
@@ -182,7 +182,7 @@ cases:
     expected_articles: [anx-III-4-a, art-6-3, rec-53]
     should_flag: true
     source: anx-III-4-a; art-6-3; rec-53
-    review_status: draft
+    review_status: accepted
     notes: >-
       Unclear because it sits between two readings. Converting CVs into structured data is a
       "narrow procedural task" (Art. 6(3)(a), recital 53), which would mean not high-risk.
@@ -199,7 +199,7 @@ cases:
     expected_articles: [art-5-1-f, rec-18, anx-III-1-c]
     should_flag: true
     source: art-5-1-f; rec-18; anx-III-1-c; art-50-3
-    review_status: draft
+    review_status: accepted
     notes: >-
       Unclear because two parts point different ways. Fatigue detection for drivers is a
       physical state, not an emotion (recital 18). Inferring stress or anger of workers is
