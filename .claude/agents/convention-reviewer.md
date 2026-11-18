@@ -35,12 +35,14 @@ Read the full changed files when the diff alone lacks context.
 2. **Protocol boundaries**: cloud access goes through `LLMClient`, `Retriever` or `Extractor`
    (`typing.Protocol`). Core code depends on the Protocol, never on a concrete adapter.
 3. **Human-authored areas**: flag as BLOCKER any generated content in:
-   - golden-set cases
    - metric implementations in `evals/metrics.py`
    - the deterministic rules node
 
    These must stay `NotImplementedError` stubs with `# TODO(ramazan)` until written by hand.
    Tests for them are allowed.
+
+   Golden cases may be drafted by Claude. Flag as BLOCKER a generated case that is not
+   `review_status: draft`, has no `source`, or changes a case that is `accepted` or `changed`.
 4. **Public data only**: no personal data, client data, real names or secrets in code, tests,
    fixtures or corpus.
 5. **Code style**: full type hints, docstrings on public functions, small functions, no
