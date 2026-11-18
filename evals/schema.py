@@ -15,6 +15,9 @@ import yaml
 from pydantic import BaseModel, ConfigDict, Field
 
 from ai_act_check.corpus import RAW_HTML_PATH, parse_regulation
+from ai_act_check.risk import RiskClass
+
+__all__ = ["GoldenCase", "Prediction", "ReviewStatus", "RiskClass", "load_golden"]
 
 GOLDEN_DIR = Path(__file__).resolve().parent / "golden"
 GOLDEN_V0_PATH = GOLDEN_DIR / "v0.yaml"
@@ -23,16 +26,6 @@ GOLDEN_V0_PATH = GOLDEN_DIR / "v0.yaml"
 # Ids start with a number (rec-18, art-5-1-f) or a Roman numeral (anx-III-4-a), so words
 # such as "art-based" are not mistaken for chunk ids.
 _CHUNK_ID_IN_TEXT = re.compile(r"\b(?:rec-\d+|art-\d+|anx-[IVXL]+)(?:-[A-Za-z0-9]+)*\b")
-
-
-class RiskClass(StrEnum):
-    """Risk classes under the EU AI Act, plus `unclear` for cases a human must decide."""
-
-    PROHIBITED = "prohibited"
-    HIGH_RISK = "high_risk"
-    TRANSPARENCY = "transparency"
-    MINIMAL = "minimal"
-    UNCLEAR = "unclear"
 
 
 class ReviewStatus(StrEnum):
