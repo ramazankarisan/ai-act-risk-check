@@ -110,44 +110,78 @@ def estimate_cost(model: str, input_tokens: int, output_tokens: int) -> float | 
 
 def build_report(runs: Sequence[CaseRun], provider: str, deployment: str, run_at: datetime) -> str:
     """Render the Markdown report: run info, metrics, cost and latency, per-case table."""
-    metrics = compute_metrics(runs)
-    models = sorted({r.result.usage.model for r in runs})
-    input_tokens = sum(r.result.usage.input_tokens for r in runs)
-    output_tokens = sum(r.result.usage.output_tokens for r in runs)
-    latencies = [r.result.usage.latency_ms for r in runs]
-    cost = estimate_cost(models[0], input_tokens, output_tokens) if len(models) == 1 else None
-    ideal_rate = sum(r.gold.should_flag for r in runs) / len(runs)
-
-    lines = [
-        f"# Eval v0: baseline on {provider}",
-        "",
-        f"- Run at: {run_at:%Y-%m-%d %H:%M} UTC",
-        f"- Deployment: `{deployment}`",
-        f"- Model id: {', '.join(f'`{m}`' for m in models)}",
-        f"- Golden set: {len(runs)} cases, retrieval: BM25 top {TOP_K}",
-        "",
-        "## Metrics",
-        "",
-        "| metric | value |",
-        "|---|---|",
+    if not runs:
+        raise ValueError("no case runs to report")
+    sections = [
+        _header(runs, provider, deployment, run_at),
+        _metrics_section(runs),
+        _cost_section(runs),
+        _cases_section(runs),
     ]
-    lines += [f"| {name} | {value:.2f} |" for name, value in metrics.items()]
+    return "\n\n".join(sections)
+
+
+def _models(runs: Sequence[CaseRun]) -> list[str]:
+    """The distinct model ids the provider reported, sorted."""
+    return sorted({r.result.usage.model for r in runs})
+
+
+def _header(runs: Sequence[CaseRun], provider: str, deployment: str, run_at: datetime) -> str:
+    """Title and run information."""
+    models = ", ".join(f"`{m}`" for m in _models(runs))
+    return "\n".join(
+        [
+            f"# Eval v0: baseline on {provider}",
+            "",
+            f"- Run at: {run_at:%Y-%m-%d %H:%M} UTC",
+            f"- Deployment: `{deployment}`",
+            f"- Model id: {models}",
+            f"- Golden set: {len(runs)} cases, retrieval: BM25 top {TOP_K}",
+        ]
+    )
+
+
+def _metrics_section(runs: Sequence[CaseRun]) -> str:
+    """Overall metrics table, with the ideal review rate as a reading aid."""
+    ideal_rate = sum(r.gold.should_flag for r in runs) / len(runs)
+    lines = ["## Metrics", "", "| metric | value |", "|---|---|"]
+    lines += [f"| {name} | {value:.2f} |" for name, value in compute_metrics(runs).items()]
     lines += [
         "",
         f"Review rate should be close to {ideal_rate:.2f} (share of cases that need review);"
         " read it together with flag recall.",
-        "",
-        "## Cost and latency",
-        "",
-        "| item | value |",
-        "|---|---|",
-        f"| input tokens | {input_tokens:,} |",
-        f"| output tokens | {output_tokens:,} |",
-        f"| total tokens | {input_tokens + output_tokens:,} |",
-        f"| estimated cost | {'n/a (no price configured)' if cost is None else f'${cost:.4f}'} |",
-        f"| latency p50 | {percentile(latencies, 50):,.0f} ms |",
-        f"| latency p95 | {percentile(latencies, 95):,.0f} ms |",
-        "",
+    ]
+    return "\n".join(lines)
+
+
+def _cost_section(runs: Sequence[CaseRun]) -> str:
+    """Token totals, estimated cost and latency percentiles."""
+    models = _models(runs)
+    input_tokens = sum(r.result.usage.input_tokens for r in runs)
+    output_tokens = sum(r.result.usage.output_tokens for r in runs)
+    latencies = [r.result.usage.latency_ms for r in runs]
+    # One price only makes sense when every call used the same model.
+    cost = estimate_cost(models[0], input_tokens, output_tokens) if len(models) == 1 else None
+    cost_text = "n/a (no price configured)" if cost is None else f"${cost:.4f}"
+    return "\n".join(
+        [
+            "## Cost and latency",
+            "",
+            "| item | value |",
+            "|---|---|",
+            f"| input tokens | {input_tokens:,} |",
+            f"| output tokens | {output_tokens:,} |",
+            f"| total tokens | {input_tokens + output_tokens:,} |",
+            f"| estimated cost | {cost_text} |",
+            f"| latency p50 | {percentile(latencies, 50):,.0f} ms |",
+            f"| latency p95 | {percentile(latencies, 95):,.0f} ms |",
+        ]
+    )
+
+
+def _cases_section(runs: Sequence[CaseRun]) -> str:
+    """Per-case table, then the model's reasoning for each case."""
+    lines = [
         "## Per case",
         "",
         "| id | expected | predicted | ok | flag should/got | expected ids | cited ids"
@@ -161,7 +195,7 @@ def build_report(runs: Sequence[CaseRun], provider: str, deployment: str, run_at
             f"**{r.gold.id}** ({r.prediction.predicted_class}): {r.result.answer.reasoning}",
             "",
         ]
-    return "\n".join(lines)
+    return "\n".join(lines).rstrip()
 
 
 def _case_row(r: CaseRun) -> str:

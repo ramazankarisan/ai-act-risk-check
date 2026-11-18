@@ -65,5 +65,5 @@ def _require_env(name: str) -> str:
     """Return the env var's value, or raise with a hint if it is missing."""
     value = os.environ.get(name, "").strip()
     if not value:
-        raise RuntimeError(f"set {name} (see .env.example)")
+        raise RuntimeError(f"environment variable {name} is not set")
     return value
