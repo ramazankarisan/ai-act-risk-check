@@ -32,3 +32,6 @@ Review of the 12 cases in [`golden/v0.yaml`](golden/v0.yaml), done by the mainta
    them). `acceptable_articles` are correct but not required: citing them does not lower
    precision. Added from each case's `source` (`art-3-pt-39`, `art-50-3`) and `art-4`
    (AI literacy) on both minimal cases. Statuses unchanged.
+5. **Flag means uncertain, not severe.** Written into the `GoldenCase` docstring and the
+   `v0.yaml` header. `flag_recall` is reported together with `review_rate`, so flagging
+   every case is not free.
